@@ -20,6 +20,9 @@ const app = express();
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
+// Setup Parser
+app.use(express.urlencoded({extended: true}));
+
 // Creating route for homepage
 app.get("/", (req, res) => {
   res.render("home");
@@ -30,6 +33,24 @@ app.get("/campgrounds", async (req, res) => {
     const campgrounds = await Campground.find({});
     res.render('campgrounds/index', { campgrounds });
   });
+
+// Create route to server from for editing a campground
+app.get('/campgrounds/new', (req, res) => {
+    res.render('campgrounds/new'); 
+})
+
+// Create route to recieve data from the form
+app.post('/campgrounds/', async (req, res) => {
+    const campground = new Campground(req.body.campground);
+    await campground.save();
+    res.redirect(`/campgrounds/${campground._id}`)
+})
+
+//  Create route for a details campground page
+app.get('/campgrounds/:id', async (req, res) => {
+    const campground = await Campground.findById(req.params.id);
+    res.render('campgrounds/show', { campground });
+})
 
 // Set server port
 app.listen(PORT, () => {
