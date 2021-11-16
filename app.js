@@ -25,11 +25,10 @@ app.get("/", (req, res) => {
   res.render("home");
 });
 
-// Creating route for homepage
-app.get("/makecampground", async (req, res) => {
-    const camp = new Campground({title: 'My Backyard', description: 'free camping'});
-    await camp.save();
-    res.send(camp);
+// Creating different routes for different campgrounds
+app.get("/campgrounds", async (req, res) => {
+    const campgrounds = await Campground.find({});
+    res.render('campgrounds/index', { campgrounds });
   });
 
 // Set server port
