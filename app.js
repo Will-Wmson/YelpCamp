@@ -82,7 +82,7 @@ app.post('/campgrounds', validateCampground, catchAsync(async (req, res, next) =
 
 //  Create route for a details campground page
 app.get('/campgrounds/:id', catchAsync(async (req, res) => {
-    const campground = await Campground.findById(req.params.id);
+    const campground = await Campground.findById(req.params.id).populate('reviews');
     res.render('campgrounds/show', { campground });
 }));
 
@@ -114,6 +114,14 @@ app.post('/campgrounds/:id/reviews', validateReview, catchAsync(async (req, res)
   await review.save();
   await campground.save();
   res.redirect(`/campgrounds/${campground._id}`);
+}))
+
+// Create a route for deleting reviews
+app.delete('/campgrounds/:id/reviews/:reviewId', catchAsync(async (req, res) => {
+  const { id, reviewId } = req.params;
+  await Campground.findByIdAndUpdate(id, {$pull: {reviews: reviewId}});
+  await Review.findByIdAndDelete(reviewId);
+  res.redirect(`/campgrounds/${id}`);
 }))
 
 // Middleware error message
