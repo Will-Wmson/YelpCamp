@@ -4,14 +4,12 @@ const path = require("path");
 const PORT = 5500;
 const mongoose = require("mongoose");
 mongoose.connect("mongodb://localhost:27017/yelp-camp");
-const methodOverride = require('method-override');
-const Campground = require('./models/campground');
-const morgan = require('morgan');
-const ejsMate = require('ejs-mate');
-const ExpressError = require('./utils/ExpressError');
-const catchAsync = require('./utils/catchAsync');
-const { campgroundSchema, reviewSchema } = require('./schemas.js');
-const Review = require('./models/reviews')
+const methodOverride = require("method-override");
+const ejsMate = require("ejs-mate");
+const ExpressError = require("./utils/ExpressError");
+
+const campgrounds = require("./routes/campgrounds");
+const reviews = require("./routes/reviews");
 
 // connection to mongoose
 const db = mongoose.connection;
@@ -24,116 +22,34 @@ db.once("open", () => {
 const app = express();
 
 // Setting up EJS
-app.engine('ejs', ejsMate);
+app.engine("ejs", ejsMate);
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
 // Setup Parser
-app.use(express.urlencoded({extended: true}));
+app.use(express.urlencoded({ extended: true }));
 
 // Setup method-Override to use PUT
-app.use(methodOverride('_method'));
+app.use(methodOverride("_method"));
 
-// Validating Javascript Object(usig Joi) for reviews before passing to Mongoose
-const validateReview = (req, res, next) => {
-  const { error } = reviewSchema.validate(req.body);
-  if (error) {
-    const msg = error.details.map(el => el.message).join(',');
-    throw new ExpressError(msg, 400);
-  } else {
-    next();
-  }
-}
-
-// Validating Javascript Object(usig Joi) for campgrounds before passing to Mongoose
-const validateCampground = (req, res, next) => {
-  const { error } = campgroundSchema.validate(req.body);
-  if(error) {
-    const msg = error.details.map(el => el.message).join(',');
-    throw new ExpressError(msg, 400);
-  } else {
-    next();
-  }
-}
+app.use("/campgrounds", campgrounds);
+app.use("/campgrounds/:id/reviews", reviews);
 
 // Creating route for homepage
 app.get("/", (req, res) => {
   res.render("home");
 });
 
-// Creating different routes for different campgrounds
-app.get("/campgrounds", catchAsync(async (req, res) => {
-    const campgrounds = await Campground.find({});
-    res.render('campgrounds/index', { campgrounds });
-  }));
-
-// Create route to server from for editing a campground
-app.get('/campgrounds/new', (req, res) => {
-    res.render('campgrounds/new'); 
-});
-
-// Create route to recieve data from the form using Joi to validate entries before sending to mongoose
-app.post('/campgrounds', validateCampground, catchAsync(async (req, res, next) => {
-  // if(!req.body.campground) throw new ExpressError('Invalid Campground Data', 400);
-    const campground = new Campground(req.body.campground);
-    await campground.save();
-    res.redirect(`/campgrounds/${campground._id}`)
-}));
-
-//  Create route for a details campground page
-app.get('/campgrounds/:id', catchAsync(async (req, res) => {
-    const campground = await Campground.findById(req.params.id).populate('reviews');
-    res.render('campgrounds/show', { campground });
-}));
-
-// Create route for editing campgrounds
-app.get('/campgrounds/:id/edit', catchAsync(async (req, res) => {
-  const campground = await Campground.findById(req.params.id);
-  res.render('campgrounds/edit', { campground });
-}));
-
-// Create a route to update campground
-app.put('/campgrounds/:id', validateCampground, catchAsync(async(req, res) => {
-  const { id } = req.params;
-  const campground = await Campground.findByIdAndUpdate(id, {...req.body.campground});
-  res.redirect(`/campgrounds/${campground._id}`);
-}));
-
-// Create a route to delete campground
-app.delete('/campgrounds/:id', catchAsync(async (req, res) => {
-  const { id } = req.params;
-  await Campground.findByIdAndDelete(id);
-  res.redirect('/campgrounds');
-}));
-
-// Create a route for campground reviews
-app.post('/campgrounds/:id/reviews', validateReview, catchAsync(async (req, res) => {
-  const campground = await Campground.findById(req.params.id);
-  const review = new Review(req.body.review);
-  campground.reviews.push(review);
-  await review.save();
-  await campground.save();
-  res.redirect(`/campgrounds/${campground._id}`);
-}))
-
-// Create a route for deleting reviews
-app.delete('/campgrounds/:id/reviews/:reviewId', catchAsync(async (req, res) => {
-  const { id, reviewId } = req.params;
-  await Campground.findByIdAndUpdate(id, {$pull: {reviews: reviewId}});
-  await Review.findByIdAndDelete(reviewId);
-  res.redirect(`/campgrounds/${id}`);
-}))
-
 // Middleware error message
-app.all('*', (req, res, next) => {
-  next(new ExpressError('Page Not Found', 404));
-})
+app.all("*", (req, res, next) => {
+  next(new ExpressError("Page Not Found", 404));
+});
 
 // Middleware error message
 app.use((err, req, res, next) => {
   const { statusCode = 500 } = err;
-  if(!err.message) err.message = 'Something Went Wrong!';
-  res.status(statusCode).render('error', { err });
+  if (!err.message) err.message = "Something Went Wrong!";
+  res.status(statusCode).render("error", { err });
 });
 
 // Set server port

@@ -19,7 +19,7 @@ const CampgroundSchema = new Schema({
     }]
 });
 
-// Middleware to remove camp and reviews
+// Middleware(Query) to remove camp and reviews
 CampgroundSchema.post('findOneAndDelete', async function(doc) {
     if(doc) {
         await Review.deleteMany({
