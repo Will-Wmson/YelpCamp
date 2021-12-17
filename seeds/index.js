@@ -1,37 +1,53 @@
-// This is a separate file from the node.js app for the purpse of seeding some data
-// for development purposes
-
-//  imports
-const PORT = 5500;
 const mongoose = require("mongoose");
-mongoose.connect("mongodb://localhost:27017/yelp-camp");
-const Campground = require("../models/campground");
 const cities = require("./cities");
 const { places, descriptors } = require("./seedHelpers");
+const Campground = require("../models/campground");
 
-// connection to mongoose
+mongoose.connect("mongodb://localhost:27017/yelp-camp", {
+  useNewUrlParser: true,
+  useCreateIndex: true,
+  useUnifiedTopology: true,
+});
+
 const db = mongoose.connection;
-db.on("error", console.error.bind(console, "connection error"));
+
+db.on("error", console.error.bind(console, "connection error:"));
 db.once("open", () => {
   console.log("Database connected");
 });
 
 const sample = (array) => array[Math.floor(Math.random() * array.length)];
 
-// Emptying the DB and then Seeding with new data
 const seedDB = async () => {
   await Campground.deleteMany({});
-  for (let i = 0; i < 50; i++) {
+  for (let i = 0; i < 300; i++) {
     const random1000 = Math.floor(Math.random() * 1000);
     const price = Math.floor(Math.random() * 20) + 10;
     const camp = new Campground({
-      author: "61bb5c9dcbf16773b7108886",
+      //YOUR USER ID
+      author: "5f5c330c2cd79d538f2c66d9",
       location: `${cities[random1000].city}, ${cities[random1000].state}`,
-      title: `${sample(descriptors)}, ${sample(places)}`,
-      image: "https://source.unsplash.com/collection/483251",
+      title: `${sample(descriptors)} ${sample(places)}`,
       description:
-        "Lorem ipsum dolor sit amet consectetur, adipisicing elit. Nihil dolores reiciendis odit repellendus, quod consequatur eius modi officia fuga dolorem, perferendis, laudantium earum iste amet. Provident magni unde placeat asperiores!",
+        "Lorem ipsum dolor sit amet consectetur adipisicing elit. Quibusdam dolores vero perferendis laudantium, consequuntur voluptatibus nulla architecto, sit soluta esse iure sed labore ipsam a cum nihil atque molestiae deserunt!",
       price,
+      geometry: {
+        type: "Point",
+        coordinates: [
+          cities[random1000].longitude,
+          cities[random1000].latitude,
+        ],
+      },
+      images: [
+        {
+          url: "https://res.cloudinary.com/douqbebwk/image/upload/v1600060601/YelpCamp/ahfnenvca4tha00h2ubt.png",
+          filename: "YelpCamp/ahfnenvca4tha00h2ubt",
+        },
+        {
+          url: "https://res.cloudinary.com/douqbebwk/image/upload/v1600060601/YelpCamp/ruyoaxgf72nzpi4y6cdi.png",
+          filename: "YelpCamp/ruyoaxgf72nzpi4y6cdi",
+        },
+      ],
     });
     await camp.save();
   }

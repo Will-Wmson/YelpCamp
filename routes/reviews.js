@@ -1,13 +1,14 @@
 const express = require("express");
 const router = express.Router({ mergeParams: true });
-const reviews = require("../controllers/reviews");
-const catchAsync = require("../utils/catchAsync");
 const { validateReview, isLoggedIn, isReviewAuthor } = require("../middleware");
+const Campground = require("../models/campground");
+const Review = require("../models/reviews");
+const reviews = require("../controllers/reviews");
+const ExpressError = require("../utils/ExpressError");
+const catchAsync = require("../utils/catchAsync");
 
-// Create a route for campground reviews
 router.post("/", isLoggedIn, validateReview, catchAsync(reviews.createReview));
 
-// Create a route for deleting reviews
 router.delete(
   "/:reviewId",
   isLoggedIn,

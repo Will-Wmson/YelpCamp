@@ -1,20 +1,20 @@
-const ExpressError = require("./utils/ExpressError");
 const { campgroundSchema, reviewSchema } = require("./schemas.js");
+const ExpressError = require("./utils/ExpressError");
 const Campground = require("./models/campground");
 const Review = require("./models/reviews");
 
 module.exports.isLoggedIn = (req, res, next) => {
   if (!req.isAuthenticated()) {
     req.session.returnTo = req.originalUrl;
-    req.flash("error", "You must be login in");
+    req.flash("error", "You must be signed in first!");
     return res.redirect("/login");
   }
   next();
 };
 
-// Validating Javascript Object(usig Joi) for campgrounds before passing to Mongoose
 module.exports.validateCampground = (req, res, next) => {
   const { error } = campgroundSchema.validate(req.body);
+  console.log(req.body);
   if (error) {
     const msg = error.details.map((el) => el.message).join(",");
     throw new ExpressError(msg, 400);
@@ -33,17 +33,6 @@ module.exports.isAuthor = async (req, res, next) => {
   next();
 };
 
-// Validating Javascript Object(usig Joi) for reviews before passing to Mongoose
-module.exports.validateReview = (req, res, next) => {
-  const { error } = reviewSchema.validate(req.body);
-  if (error) {
-    const msg = error.details.map((el) => el.message).join(",");
-    throw new ExpressError(msg, 400);
-  } else {
-    next();
-  }
-};
-
 module.exports.isReviewAuthor = async (req, res, next) => {
   const { id, reviewId } = req.params;
   const review = await Review.findById(reviewId);
@@ -52,4 +41,14 @@ module.exports.isReviewAuthor = async (req, res, next) => {
     return res.redirect(`/campgrounds/${id}`);
   }
   next();
+};
+
+module.exports.validateReview = (req, res, next) => {
+  const { error } = reviewSchema.validate(req.body);
+  if (error) {
+    const msg = error.details.map((el) => el.message).join(",");
+    throw new ExpressError(msg, 400);
+  } else {
+    next();
+  }
 };
